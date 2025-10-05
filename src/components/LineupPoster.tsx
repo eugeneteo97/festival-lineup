@@ -1,6 +1,9 @@
 import { Artist } from "./ArtistInput";
-import { X, Play } from "lucide-react";
+import { X, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface LineupPosterProps {
   festivalName: string;
@@ -26,10 +29,60 @@ export const LineupPoster = ({
   artists,
   onRemoveArtist,
 }: LineupPosterProps) => {
+  const [playingTrack, setPlayingTrack] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const groupedArtists = tierOrder.reduce((acc, tier) => {
     acc[tier] = artists.filter((a) => a.tier === tier);
     return acc;
   }, {} as Record<string, Artist[]>);
+
+  const handlePlayPreview = async (artistName: string, songName: string, trackId: string) => {
+    try {
+      // Stop currently playing track
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      if (playingTrack === trackId) {
+        setPlayingTrack(null);
+        return;
+      }
+
+      toast.loading("Loading preview...");
+
+      const { data, error } = await supabase.functions.invoke('get-spotify-preview', {
+        body: { artist: artistName, song: songName }
+      });
+
+      toast.dismiss();
+
+      if (error) throw error;
+
+      if (!data.previewUrl) {
+        toast.error("No preview available for this track");
+        return;
+      }
+
+      const audio = new Audio(data.previewUrl);
+      audioRef.current = audio;
+      
+      audio.play();
+      setPlayingTrack(trackId);
+
+      audio.onended = () => {
+        setPlayingTrack(null);
+        audioRef.current = null;
+      };
+
+      toast.success(`Playing: ${data.trackName}`);
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error playing preview:', error);
+      toast.error("Failed to load preview");
+    }
+  };
 
   return (
     <div className="relative bg-gradient-to-br from-card via-background to-card border-2 border-primary/30 rounded-2xl p-8 md:p-12 shadow-glow-primary overflow-hidden">
@@ -65,18 +118,27 @@ export const LineupPoster = ({
                     </h2>
                     {artist.songs && artist.songs.length > 0 && (
                       <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-                        {artist.songs.map((song, songIndex) => (
-                          <div key={songIndex} className="inline-flex items-center gap-1 text-sm md:text-base text-muted-foreground font-normal">
-                            <span>{song}</span>
-                            <button
-                              onClick={() => window.open(`https://open.spotify.com/search/${encodeURIComponent(artist.name + ' ' + song)}`, '_blank')}
-                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/20 hover:bg-primary/40 transition-colors"
-                              aria-label={`Preview ${song}`}
-                            >
-                              <Play className="h-3 w-3 text-primary fill-primary" />
-                            </button>
-                          </div>
-                        ))}
+                        {artist.songs.map((song, songIndex) => {
+                          const trackId = `${artist.id}-${songIndex}`;
+                          const isPlaying = playingTrack === trackId;
+                          
+                          return (
+                            <div key={songIndex} className="inline-flex items-center gap-1 text-sm md:text-base text-muted-foreground font-normal">
+                              <span>{song}</span>
+                              <button
+                                onClick={() => handlePlayPreview(artist.name, song, trackId)}
+                                className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/20 hover:bg-primary/40 transition-colors"
+                                aria-label={`Preview ${song}`}
+                              >
+                                {isPlaying ? (
+                                  <Pause className="h-3 w-3 text-primary fill-primary" />
+                                ) : (
+                                  <Play className="h-3 w-3 text-primary fill-primary" />
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                     <Button

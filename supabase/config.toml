@@ -1,1 +1,4 @@
 project_id = "cxnnkwzkdbmysijmoimr"
+
+[functions.get-spotify-preview]
+verify_jwt = false
