@@ -1,5 +1,5 @@
 import { Artist } from "./ArtistInput";
-import { X } from "lucide-react";
+import { X, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LineupPosterProps {
@@ -64,8 +64,19 @@ export const LineupPoster = ({
                       {artist.name}
                     </h2>
                     {artist.songs && artist.songs.length > 0 && (
-                      <div className="mt-2 text-sm md:text-base text-muted-foreground font-normal">
-                        {artist.songs.join(" • ")}
+                      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+                        {artist.songs.map((song, songIndex) => (
+                          <div key={songIndex} className="inline-flex items-center gap-1 text-sm md:text-base text-muted-foreground font-normal">
+                            <span>{song}</span>
+                            <button
+                              onClick={() => window.open(`https://open.spotify.com/search/${encodeURIComponent(artist.name + ' ' + song)}`, '_blank')}
+                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/20 hover:bg-primary/40 transition-colors"
+                              aria-label={`Preview ${song}`}
+                            >
+                              <Play className="h-3 w-3 text-primary fill-primary" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
                     <Button
