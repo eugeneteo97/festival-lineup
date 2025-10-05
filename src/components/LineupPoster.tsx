@@ -63,6 +63,11 @@ export const LineupPoster = ({
                     >
                       {artist.name}
                     </h2>
+                    {artist.songs && artist.songs.length > 0 && (
+                      <div className="mt-2 text-sm md:text-base text-muted-foreground font-normal">
+                        {artist.songs.join(" • ")}
+                      </div>
+                    )}
                     <Button
                       variant="destructive"
                       size="icon"
