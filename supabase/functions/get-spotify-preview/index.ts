@@ -4,7 +4,7 @@ const corsHeaders = {
 };
 
 const SPOTIFY_CLIENT_ID = '56f85b2745a54d1b9c54e64ce573ef6f';
-const SPOTIFY_CLIENT_SECRET = 'YOUR_CLIENT_SECRET'; // Note: For production, use Spotify's client credentials flow
+const SPOTIFY_CLIENT_SECRET = Deno.env.get('SPOTIFY_CLIENT_SECRET');
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
