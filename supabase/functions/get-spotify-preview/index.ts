@@ -17,6 +17,9 @@ Deno.serve(async (req) => {
     console.log(`Searching for: ${artist} - ${song}`);
 
     // Get Spotify access token (client credentials flow)
+    console.log('Client ID:', SPOTIFY_CLIENT_ID);
+    console.log('Client Secret exists:', !!SPOTIFY_CLIENT_SECRET);
+    
     const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: {
@@ -27,7 +30,9 @@ Deno.serve(async (req) => {
     });
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to get Spotify access token');
+      const errorData = await tokenResponse.text();
+      console.error('Spotify token error:', errorData);
+      throw new Error(`Failed to get Spotify access token: ${errorData}`);
     }
 
     const { access_token } = await tokenResponse.json();
